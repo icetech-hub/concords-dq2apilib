@@ -1,5 +1,5 @@
 {
-  "name": "dq2apilib",
+  "name": "concords-dq2apilib",
   "version": "1.0.0",
   "description": "DQ2 WebAssembly API Library - 行情與交易資料 API",
   "main": "dist/dq2apilib.js",
@@ -22,10 +22,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/icetech-hub/dq2apilib.git"
+    "url": "https://github.com/icetech-hub/concords-dq2apilib.git"
   },
   "bugs": {
-    "url": "https://github.com/icetech-hub/dq2apilib/issues"
+    "url": "https://github.com/icetech-hub/concords-dq2apilib/issues"
   },
-  "homepage": "https://github.com/icetech-hub/dq2apilib#readme"
+  "homepage": "https://github.com/icetech-hub/concords-dq2apilib#readme"
 }
