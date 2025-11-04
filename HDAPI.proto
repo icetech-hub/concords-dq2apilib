@@ -1,0 +1,52 @@
+
+syntax = "proto3";
+
+package omk;
+
+option go_package = "./pt";
+
+// 定義一筆市場資料的結構
+message Tbl {
+    string symbol = 1;
+    int64 datetime = 2;
+    double lastprice = 3;
+    int64 volume = 4;
+    int64 totalvolume = 5;
+    double bidprice1 = 6;
+    double askprice1 = 7;
+    int64 oi = 8;
+}
+
+// 定義一筆市場資料的結構
+message Omk {
+    string symbol = 1;
+    int64 datetime = 2;
+    double openprice = 3;
+    double highestprice = 4;
+    double lowestprice = 5;
+    double closeprice = 6;
+    int64 volume = 7;
+    int64 amount = 8;
+    int64 oi = 9;
+    string json_b = 10;
+    int64 totalvolume = 11;
+    int64 totalamount = 12;
+    bool half = 13;
+}
+
+message HDData {
+    reserved 5, 6, 7, 8, 9, 10; // 預留這些編號
+    // 狀態代碼
+    int32 code = 1;
+    // 文字訊息，可以為空
+    string msg = 2;
+    // 類型，必須為[服務].[功能]，例如：hd.omk
+    string type = 3;
+    // 識別id
+    string recognize = 4;
+    // 分K或日K的array結構
+    repeated Omk omks = 11;
+    // Tbl的array結構
+    repeated Tbl tbls = 12;
+}
+

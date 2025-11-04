@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package base;
+
+option go_package = "./pt";
+
+message BaseData {
+    reserved 5, 6, 7, 8, 9, 10; // 預留這些編號
+    // 狀態代碼
+    int32 code = 1;
+    // 文字訊息，可以為空
+    optional string msg = 2;
+    // 類型，必須為[服務].[功能]，例如：hd.omk
+    string type = 3;
+    // 識別id
+    string recognize = 4;
+}

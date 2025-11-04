@@ -1,0 +1,401 @@
+// Feed API server protocol v1.0.10
+
+syntax = "proto2";
+
+package FeedAPI;
+
+option go_package = "./pb";
+
+// Last changes were made on 15 Sep 2025 v1.0.10
+enum Version
+{
+  VERSION_VALUE = 1000010;
+}
+
+// ----------------------------------------------------------------------
+// 4.1 MainMsg (主封包)
+message MainMsg
+{
+  // 4.2 Logon (登入)
+  optional Logon Logon = 1;
+
+  // 4.3 LogonReply (登入回應)
+  optional LogonReply LogonReply = 2;
+
+  // 4.4 AdapterStatus (Adapter狀態)
+  optional AdapterStatus AdapterStatus = 3;
+
+  // 4.5 Command (指令資訊)
+  optional Command Command = 4;
+
+  // 4.6 CommandReply (指令回應)
+  optional CommandReply CommandReply = 5;
+
+  // 4.7 SymbolMap (品種對應表資訊)
+  repeated SymbolMap SymbolMaps = 6;
+
+  // 4.8 ContractList (合約資訊)
+  repeated ContractList ContractLists = 7;
+
+  // 4.9 Realtime (即時行情)
+  repeated Realtime Realtimes = 8;
+
+  // 4.10 Heartbeat (心跳訊息)
+  optional Heartbeat Heartbeat = 9;
+
+  // 4.11 SymbolList (品種資訊)
+  repeated SymbolList SymbolLists = 10;
+
+  // 4.12 Continued (接續旗號)
+  optional bool Continued = 11;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.2 Logon (登入)
+message Logon
+{
+  // 登入系統名稱
+  required string System = 1;
+
+  // 登入密碼
+  required string Password = 2;
+
+  // 來源行情代碼
+  required string Source = 3;
+
+  // 版本號 VERSION_VALUE
+  required uint32 ProtocolVersion = 4;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.3 LogonReply (登入回應)
+message LogonReply
+{
+  // 回傳登入結果
+  required string Result = 1;
+
+  // 失敗原因說明
+  optional string Description = 2;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.4 AdapterStatus (Adapter狀態)
+message AdapterStatus
+{
+  // 回傳登入結果
+  required string Status = 1;
+
+  // 失敗原因說明
+  optional string Description = 2;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.5 Command (指令資訊)
+message Command
+{
+  // 回傳登入結果
+  required string Cmd = 1;
+
+  // 失敗原因說明
+  repeated string Parameters = 2;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.6 CommandReply (指令回應)
+message CommandReply
+{
+  // 回傳原指令識別
+  required string Cmd = 1;
+
+  // 回傳延伸參數
+  repeated string Parameters = 2;
+
+  // 回傳指令結果
+  required string Result = 3;
+
+  // 失敗原因說明
+  optional string Description = 4;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.7 SymbolMap (品種對應表資訊)
+message SymbolMap
+{
+  // DQ2 品種代碼 (Type.Exchange.Symbol)
+  required string DQ2Code = 1;
+
+  // 來源交易所
+  required string Exchange = 2;
+
+  // 來源品種
+  required string Symbol = 3;
+
+  // 來源價格要乘上的乘數
+  required double Multiplier = 4 [default=1];
+
+  // DQ2 延伸代碼 
+  optional string DQ2Extra = 5;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.8 ContractList (合約資訊)
+enum MktCate
+{
+  // TWSE 交易所
+  MC_TWS_TSE = 1;  // 上市
+  MC_TWS_OTC = 2;  // 上櫃
+}
+enum SymbCate
+{
+  // TWSE 交易所
+  SC_TWS_INDEX = 0;        // 指數	
+  SC_TWS_STOCK = 1;        // 股票
+  SC_TWS_WARRRANT = 2;     // 權證
+  SC_TWS_ETF = 3;      	   // ETF
+  SC_TWS_BOND_COMP = 4;    // 公司債
+  SC_TWS_BOND_DEPO = 5;    // 存託公司債
+  SC_TWS_BOND_CENT = 6;    // 中央登錄公債
+  SC_TWS_BOND_FOREIGN = 7; // 外國債券
+
+}
+enum WarrStat
+{
+  // TWSE 交易所
+  WS_TWS_00 = 0;   // 正常
+  WS_TWS_01 = 1;   // 注意
+  WS_TWS_02 = 2;   // 處置
+  WS_TWS_03 = 3;   // 注意及處置
+  WS_TWS_04 = 4;   // 再次處置
+  WS_TWS_05 = 5;   // 注意及再次處置
+  WS_TWS_06 = 6;   // 彈性處置
+  WS_TWS_07 = 7;   // 注意及彈性處置
+}
+message ContractList 
+{
+  // 商品代碼 (Type.Exchange.Commodity.Month)
+  required string SymbCode = 1;
+
+  // 商品名稱 (UTF-8)
+  required string Name = 2;
+
+  // 合約建立日期 YYYYMMDD
+  optional uint32 CreateDate = 3;
+
+  // 結算日期 YYYYMMDD
+  optional uint32 SettlementDate = 4;
+
+  // 市場最後交易日 YYYYMMDD
+  optional uint32 ExpireDate = 5;
+
+  // 最後可交易日期 YYYYMMDD
+  optional uint32 LastTradingday = 6;
+
+  // 交易所下單代碼
+  optional string ExchOrderSymbol = 7;
+
+  // 股數 (股票 張=股數)
+  optional uint32 BoardLot = 8;
+
+  // 市場別
+  optional MktCate MarketCategory = 9;
+
+  // 商品類別
+  optional SymbCate SymbolCategory = 10;
+
+  // 警示類別
+  optional WarrStat WarrningState = 11;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.9 Realtime (即時行情)
+message Realtime
+{
+  // 表示是否為快照行情
+  optional bool Snapshot = 1 [default=false];
+
+  // 商品代碼
+  optional string SymbCode = 2;
+
+  // 傳送代碼
+  optional string SendCode = 3;
+
+  // GMT+8 成交日期 (YYYYMMDD)
+  optional uint32 Date = 4;
+
+  // GMT+8 時間 (HHMMSSmmmuuunnnppp, mmm=milli-second, uuu=micro-second ; nnn=nano ; ppp=pico)
+  optional uint64 Time = 5;
+
+  // 市場資訊
+  optional Market Market = 6;
+
+  // 成交資料
+  optional Deal Deal = 7;
+
+  // 委託簿
+  optional DOM DOM = 8;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.9.1 Market (市場資訊)
+enum TsState
+{
+  TSSTATE_CLEAR = 2;
+  TSSTATE_OPEN = 3;
+  TSSTATE_CLOSE = 4;
+  TSSTATE_PREOPEN = 5;
+  TSSTATE_SUSPEND = 6;
+  TSSTATE_REMOVE = 7;
+}
+message Market
+{
+  // 盤別狀態碼
+  optional TsState TradeSession = 1;
+
+  // 漲停價
+  optional double UpperLimitPrice = 2;
+
+  // 跌停價
+  optional double LowerLimitPrice = 3;
+
+  // 參考價
+  optional double ReferencePrice = 4;
+
+  // 結算價
+  optional double SettlementPrice = 5;
+
+  // 收盤價
+  optional double ClosePrice = 6;
+
+  // 昨收盤價
+  optional double PreClosePrice = 7;
+
+  // 昨成交總量
+  optional uint64 PreTotalVolume = 8;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.9.2 Deal (成交資料)
+message Deal
+{
+  // 表示清除
+  optional bool IsClear = 1 [default=false];
+
+  // 成交價格
+  optional double LastPrice = 2;
+
+  // 成交單量
+  optional uint32 Volume = 3;
+
+  // 成交總量
+  optional uint64 TotalVolume = 4;
+
+  // 成交金額
+  optional double Amount = 5;
+
+  // 總成交金額
+  optional double TotalAmount = 6;
+
+  // 當盤開盤價
+  optional double OpenPrice = 7;
+
+  // 當盤最高價
+  optional double HighestPrice = 8;
+
+  // 當盤最低價
+  optional double LowestPrice = 9;
+
+  // 買價 
+  optional double BidPrice = 10;
+
+  // 買量
+  optional uint32 BidVolume = 11;
+
+  // 賣價
+  optional double AskPrice = 12;
+
+  // 賣量
+  optional uint32 AskVolume = 13;
+
+  // 未平倉量
+  optional uint32 OpenInterest = 14;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.9.3 DOM (委託簿)
+message DOM
+{
+  // 買價 
+  repeated double BidPrices = 1;
+
+  // 買量
+  repeated uint32 BidVolumes = 2;
+
+  // 賣價
+  repeated double AskPrices = 3;
+
+  // 賣量
+  repeated uint32 AskVolumes = 4;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.10 Heartbeat (心跳訊息)
+message Heartbeat
+{
+  // GMT+8 日期 (YYYYMMDD)
+  required uint32 Date = 1;
+
+  // GMT+8 時間 (HHMMSSmmmuuunnnppp, mmm=milli-second, uuu=micro-second ; nnn=nano ; ppp=pico)
+  required uint64 Time = 2;
+}
+
+
+// ----------------------------------------------------------------------
+// 4.11 SymbolList (品種資訊)
+enum TrgCate
+{
+  TC_INDEX = 1;		// 指數
+  TC_STOCK = 2;		// 個股
+  TC_COMMODITY = 3;	// 商品
+  TC_BOND = 4;		// 債券
+  TC_CURRENCY = 5;	// 貨幣
+  TC_INTEREST_RATE = 6;	// 利率
+}
+message SymbolList 
+{
+  // 交易所
+  required string Exchange = 1;
+
+  // 品種代碼
+  required string Symbol = 2;
+
+  // 品種名稱 (UTF-8)
+  required string Name = 3;
+
+  // 類別“F”表示期貨,“O”選擇權
+  required string Category = 4;
+
+  // 契約乘數
+  required double ContractSize = 5;
+
+  // 幣別
+  required string Currency = 6;
+
+  // 標的物
+  required string Target = 7;
+
+  // 標的物類別
+  optional TrgCate TargetCategory = 8;
+}
+

@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package quote2;
+
+option go_package = "./pb";
+
+/*
+ *  go-fiber-quote2
+ */
+
+// 定義一筆市場資料的結構
+message Search {
+    string symbol = 1;
+    string name = 2;
+}
+
+// 定義基本結構
+message Quote2Data {
+    reserved 5, 6, 7, 8, 9, 10; // 預留這些編號
+    // 狀態代碼
+    int32 code = 1;
+    // 文字訊息，可以為空
+    string msg = 2;
+    // 類型，必須為[服務].[功能]，例如：hd.omk
+    string type = 3;
+    // 識別id
+    string recognize = 4;
+    
+    repeated Search searchs = 11;
+}
+
+
+/*
+ *  dq2-pingpong
+ */ 
+message Pingpong {
+    string id = 1;          //client unique id
+    int64 pingTime = 2;     //ping 送出時間
+}

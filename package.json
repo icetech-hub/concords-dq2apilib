@@ -1,0 +1,31 @@
+{
+  "name": "dq2apilib",
+  "version": "1.0.0",
+  "description": "DQ2 WebAssembly API Library - 行情與交易資料 API",
+  "main": "dist/dq2apilib.js",
+  "jsdelivr": "dist/dq2apilib.js",
+  "unpkg": "dist/dq2apilib.js",
+  "files": [
+    "dist/dq2apilib.js",
+    "README.md"
+  ],
+  "keywords": [
+    "dq2",
+    "trading",
+    "quote",
+    "nats",
+    "market-data",
+    "futures",
+    "stock"
+  ],
+  "author": "aaron",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/icetech-hub/dq2apilib.git"
+  },
+  "bugs": {
+    "url": "https://github.com/icetech-hub/dq2apilib/issues"
+  },
+  "homepage": "https://github.com/icetech-hub/dq2apilib#readme"
+}
