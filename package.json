@@ -1,6 +1,6 @@
 {
   "name": "concords-dq2apilib",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "DQ2 WebAssembly API Library - 行情與交易資料 API",
   "type": "module",
   "main": "dist/dq2api.js",
