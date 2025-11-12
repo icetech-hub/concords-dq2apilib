@@ -2,10 +2,27 @@
   "name": "concords-dq2apilib",
   "version": "1.0.0",
   "description": "DQ2 WebAssembly API Library - 行情與交易資料 API",
-  "main": "dist/dq2apilib.js",
+  "type": "module",
+  "main": "dist/dq2api.js",
+  "module": "dist/dq2api.js",
+  "types": "dist/dq2api.d.ts",
   "jsdelivr": "dist/dq2apilib.js",
   "unpkg": "dist/dq2apilib.js",
+  "exports": {
+    ".": {
+      "types": "./dist/dq2api.d.ts",
+      "import": "./dist/dq2api.js",
+      "default": "./dist/dq2api.js"
+    },
+    "./wasm": {
+      "default": "./dist/dq2apilib.js"
+    }
+  },
   "files": [
+    "dist/dq2api.js",
+    "dist/dq2api.d.ts",
+    "dist/dq2api.d.ts.map",
+    "dist/dq2api.js.map",
     "dist/dq2apilib.js",
     "README.md"
   ],
@@ -27,5 +44,12 @@
   "bugs": {
     "url": "https://github.com/icetech-hub/concords-dq2apilib/issues"
   },
-  "homepage": "https://github.com/icetech-hub/concords-dq2apilib#readme"
+  "homepage": "https://github.com/icetech-hub/concords-dq2apilib#readme",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
 }
