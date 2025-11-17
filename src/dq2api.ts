@@ -308,11 +308,11 @@ export const newAPI = async (): Promise<IDQ2quoteAPI> => {
     const id = Date.now().toString(16) + "_" + apiIndex++;
     
     // 確保 dq2wasmapilib 已載入
-    if (typeof (self as any).dq2wasmapilib === 'undefined') {
+    if (typeof (globalThis as any).dq2wasmapilib === 'undefined') {
         throw new Error('dq2wasmapilib not loaded. Please ensure dq2apilib.js is loaded before importing this module.');
     }
     
-    await createDQ2ApiInstance(id, (self as any).dq2wasmapilib);
+    await createDQ2ApiInstance(id, (globalThis as any).dq2wasmapilib);
     
     return {
         Connect: async (identity: string, company: string, product: string, addr: string, name: string, password: string, autoreconnect: number, interval: number, missed: number) => {

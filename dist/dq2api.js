@@ -92,10 +92,10 @@ const createDQ2ApiInstance = async (id, dq2wasmapilib) => {
 export const newAPI = async () => {
     const id = Date.now().toString(16) + "_" + apiIndex++;
     // 確保 dq2wasmapilib 已載入
-    if (typeof self.dq2wasmapilib === 'undefined') {
+    if (typeof globalThis.dq2wasmapilib === 'undefined') {
         throw new Error('dq2wasmapilib not loaded. Please ensure dq2apilib.js is loaded before importing this module.');
     }
-    await createDQ2ApiInstance(id, self.dq2wasmapilib);
+    await createDQ2ApiInstance(id, globalThis.dq2wasmapilib);
     return {
         Connect: async (identity, company, product, addr, name, password, autoreconnect, interval, missed) => {
             const dq2Api = idToDq2Api.get(id);
