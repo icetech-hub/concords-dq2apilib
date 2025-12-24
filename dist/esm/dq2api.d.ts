@@ -1,4 +1,3 @@
-import '../dist/dq2apilib.js';
 export type Callback = () => void;
 export type OnConnectStatusCallback = (status: number) => void;
 export type OnQuoteDataCallback = (symbol: string, data: Uint8Array, dataLen: number) => void;
@@ -10,6 +9,60 @@ export type OnHotmapCallback = (subject: string, data: string) => void;
 export type OnServerTimeCallback = (date: string, time: string) => void;
 export type OnSearchContractCallback = (data: Uint8Array) => void;
 export interface IDQ2quoteAPI {
+    /**
+    * Symbol格式：I.S.TWS.XXXX。
+    ** I : 固定保留字
+    ** S : 證券
+    ** TWS : 交易所
+    ** XXXX : 股票代碼
+    ** 不分上市、上櫃
+    ** 例如：台積電：I.S.TWS.2330、聯發科：I.S.TWS.2454
+    ** 零股symbol：I.Z.TWS.XXXX
+    *
+    *
+    * 日期、時間格式： 一律為 GMT+8
+    ** 即時報價 FeedAPI::Realtime.Date : YYYYMMDD
+    ** 即時報價 FeedAPI::Realtime.Time : HHMMSSmmmuuunnnppp (mmm=milli-second, uuu=micro-second ; nnn=nano ; ppp=pico)
+    ** 因FeedAPI::Realtime.Time定義為數值，午夜時段（00 點）開頭的 0 會消失。如收到的數值為 101...，請自行補齊前導零以對應 00:01:01。上午08點、09點同樣。
+    ** 歷史資料 omk::HDData.Omk.datetime : YYYYMMDDHHMMSSmmm
+    *
+    *
+    *
+    * API 功能說明：
+    *
+    * 連線：
+    ** function：Connect、Disconnect
+    ** callback：OnConnectStatusFunc
+    *
+    * 即時報價：
+    ** function：SubQuote、UnsubQuote、GetQuote
+    ** callback：OnQuoteDataFunc
+    *
+    * 歷史資料：
+    ** function：QryHistoryData
+    ** callback：OnHistoryDataFunc
+    *
+    * 合約搜尋：
+    ** function：SearchContract
+    ** callback：OnSearchContractFunc
+    *
+    * 取得報價server主機時間:
+    ** function：GetServerDateTime
+    *
+    * 品種資訊、分類表、商品列表：
+    ** function：SubCommodity、UnsubCommodity、GetCommodity
+    ** callback：OnCommodityDataFunc
+    *
+    * 品種資訊、分類表、商品列表，子集個數與更新 TimeStamp：
+    * 熱門月對應表：
+    ** function：SubHotmap、UnsubHotmap、GetHotmap
+    ** callback：OnHotmapFunc
+    *
+    * 訊息回報：
+    ** function：-
+    ** callback：OnMessageDataFunc
+    *
+    */
     /**
      * 使用提供的憑證和地址建立與 NATS 服務器的連接。
      * @param {string} identity 用戶身份標識。
@@ -32,25 +85,23 @@ export interface IDQ2quoteAPI {
      * 訂閱指定合約的報價數據。
      ** API 維護訂閱計數 (count)，若重複訂閱，則重新推送一次市況。
      ** UnsubQuote 會減少訂閱計數 (count)，當 count = 0 時，才會實際發送取消訂閱請求。
-     ** `I.F.TWF.TXF.202506.1`、`I.F.TWF.TXF.202506.2`、`I.F.TWF.TXF.202506.*` 被視為三種獨立訂閱。若這三種訂閱同時存在，取消訂閱時需對每一種都發送 UnsubQuote。
+     ** `I.S.TWS.2330.1`、`I.S.TWS.2330.2` 被視為兩種獨立訂閱。若這兩種訂閱同時存在，取消訂閱時需對每一種都發送 UnsubQuote。
      * 報價分為 `Level 1` 和 `Level 2` 訂閱：
-     ** `Level 1`：提供基本報價資訊，包括買一、賣一和最新成交價。例如，訂閱 `I.F.TWF.TXF.202506.1`。
-     ** `Level 2`：包含委託簿數據，需額外訂閱。例如，訂閱 `I.F.TWF.TXF.202506.2`。
-     ** 若需同時訂閱 `Level 1` 和 `Level 2`，可使用通配符 *，如 `I.F.TWF.TXF.202506.*`。
+     ** `Level 1`：提供基本報價資訊，包括買一、賣一和最新成交價。例如，訂閱 `I.S.TWS.2330.1`。
+     ** `Level 2`：包含委託簿數據，需額外訂閱。例如，訂閱 `I.S.TWS.2330.2`。
      * @param {string} symbol 要訂閱的報價合約。
      * @return {string} status
      ** `1`：已重複訂閱
      ** `0`：訂閱成功
      ** `-1`：找不到指定合約
      ** `-2`：尚未連線至伺服器。
-     * @callback OnConnectStatusFunc
      */
     SubQuote(symbol: string): Promise<{
         status: number;
     }>;
     /**
      * 取消訂閱指定合約的報價數據。
-     ** `I.F.TWF.TXF.202506.1`、`I.F.TWF.TXF.202506.2`、`I.F.TWF.TXF.202506.*` 被視為三種獨立訂閱。若這三種訂閱同時存在，取消訂閱時需對每一種都發送 UnsubQuote。
+     ** `I.F.TWF.TXF.202506.1`、`I.F.TWF.TXF.202506.2` 被視為兩種獨立訂閱。若這兩種訂閱同時存在，取消訂閱時需對每一種都發送 UnsubQuote。
      * @param {string} symbol 要取消訂閱的報價合約。
      */
     UnsubQuote(symbol: string): Promise<void>;
@@ -94,9 +145,16 @@ export interface IDQ2quoteAPI {
     }>;
     /**
      * 查詢並取得指定條件的歷史資料。
-     **  `1分K`：指令 `{ “s”: "hd",”c”: "omk",”d”: {“s”: "I.F.TWF.TXF.202504"”,stime”: 20250408140000000,”etime”: 20250408150000000 },” r”: "xxx" }`。
-     ** `合約搜尋`：指令 `{"s":"quote2","c":"search","d":{"type":["S", "Z"],"symbol":"台"},"r":"xxx"}`。
+     ** `分價表`：指令 `{ “s”: "hd",”c”: "pv",”d”: {“s”: "I.S.TWS.2330"},”r”: "xxx" }`。
+     ** `分時表`：指令 `{ “s”: "hd",”c”: "tbl",”d”: {“s”: "I.S.TWS.2330",”bars”: 500,”n”: 1 },”r”: "xxx" }`。
+     ** bars 設定取回最新的資料筆數（本例為 500 筆），參數 n 須固定為 1。
+     ** `1分K`：指令 `{ “s”: "hd",”c”: "omk",”d”: {“s”: "I.S.TWS.2330",”stime”: 20250408140000000,”etime”: 20250408150000000 },”r”: "xxx" }`。
+     ** `日K`：指令 `{ “s”: "hd",”c”: "dk",”d”: {“s”: "I.S.TWS.2330",”stime”: 20250408140000000,”etime”: 20250408150000000 },”r”: "xxx" }`。
+     ** r 為自訂鍵值（Key），用於多筆查詢並行時，確保回傳結果能準確對應至原始請求。
+     * 1分K、日K 若需要包含除權息調正因子，請加入 `"ExD": 1`。 因會較耗時，需要時才加日此參數。
+     * 例如：`{ “s”: "hd",”c”: "dk","ExD": 1,”d”: {“s”: "I.S.TWS.2330",”stime”: 20250408140000000,”etime”: 20250408150000000 },”r”: "xxx" }`。
      * @param {string} qrystr 查詢條件(`JSON 字符串`)。
+     * @callback OnHistoryDataFunc
      */
     QryHistoryData(qrystr: string): Promise<void>;
     /**
@@ -143,10 +201,13 @@ export interface IDQ2quoteAPI {
     }>;
     /**
      * 透過關鍵字搜尋合約。
-     * @param {string} type 商品類型 `S,F,O`。
+     * @param {string} type 商品類型 `S,SW,F,O`。
      * @param {string} keywords 關鍵字。
+     * @param {string} unikey 用戶自訂識別碼，可在回傳結果中辨識此搜尋請求。
+     * type：合約搜尋範圍。可選用 S (證券/不含權證)、SW (權證)、F (期貨)、O (選擇權)。支援組合查詢，如 S,SW。
+     * @callback OnSearchContractFunc
      */
-    SearchContract(type: string, keywords: string): Promise<void>;
+    SearchContract(type: string, keywords: string, unikey: string): Promise<void>;
     /**
      * 用於處理 `NATS` 連接狀態變化的回調函數。
      * @return {number} `status` 連接狀態。
@@ -175,6 +236,14 @@ export interface IDQ2quoteAPI {
      * 用於處理查詢指定條件的歷史資料的回調函數。
      * @return {string} `type` 查詢指令 Type。
      * @return {Uint8Array} `data` 歷史資料(`HDAPI.proto`)。
+     * 透過 omk::HDData.recognize，開發者可精確比對並關聯回原查詢的 ubikey，以辨識多項非同步請求的回傳結果。
+     * 依據 type 不同，data 內容有所不同：
+     ** `hd.pv`：分價表數據。 omk::HDData.pvs
+     ** `hd.tbl`：分時表數據。 omk::HDData.tbls
+     ** `hd.omk`：1分K數據。 omk::HDData.omks
+     ** `hd.dk`：日K數據。 omk::HDData.omks
+     * 1分K、日K 若有包含除權息調正因子。除權息還原價格作法如下：
+     ** 開 = openprice / predividendadj、高 = highestprice / predividendadj、低 = lowestprice / predividendadj、收 = closeprice / predividendadj
     */
     OnHistoryDataFunc(callback: OnHistoryDataCallback): Promise<void>;
     /**
@@ -218,6 +287,7 @@ export interface IDQ2quoteAPI {
     /**
      * 搜尋合約，回調函數。
      * @return {Uint8Array} `data` 搜尋合約結果數據(`quote2.proto`)。
+     * 透過 quote2::Quote2Data.recognize，開發者可精確比對並關聯回原查詢的 unikey，以辨識多項非同步請求的回傳結果。
     */
     OnSearchContractFunc(callback: OnSearchContractCallback): Promise<void>;
     readonly id: string;

@@ -1,29 +1,38 @@
 {
   "name": "concords-dq2apilib",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "DQ2 WebAssembly API Library - 行情與交易資料 API",
   "type": "module",
-  "main": "dist/dq2api.js",
-  "module": "dist/dq2api.js",
-  "types": "dist/dq2api.d.ts",
+  "main": "dist/cjs/dq2api.js",
+  "module": "dist/esm/dq2api.js",
+  "types": "dist/esm/dq2api.d.ts",
   "jsdelivr": "dist/dq2apilib.js",
   "unpkg": "dist/dq2apilib.js",
   "exports": {
     ".": {
-      "types": "./dist/dq2api.d.ts",
-      "import": "./dist/dq2api.js",
-      "default": "./dist/dq2api.js"
+      "types": "./dist/esm/dq2api.d.ts",
+      "import": "./dist/esm/dq2api.js",
+      "require": "./dist/cjs/dq2api.js",
+      "default": "./dist/esm/dq2api.js"
     },
     "./wasm": {
       "default": "./dist/dq2apilib.js"
     }
   },
   "files": [
-    "dist/dq2api.js",
-    "dist/dq2api.d.ts",
-    "dist/dq2api.d.ts.map",
-    "dist/dq2api.js.map",
     "dist/dq2apilib.js",
+    "dist/dq2apilib.js.map",
+    "dist/FeedAPI_pb.js",
+    "dist/FeedAPI.js",
+    "dist/FeedAPI.proto",
+    "dist/HDAPI_pb.js",
+    "dist/HDAPI.js",
+    "dist/HDAPI.proto",
+    "dist/quote2_pb.js",
+    "dist/quote2.js",
+    "dist/quote2.proto",
+    "dist/cjs/",
+    "dist/esm/",
     "README.md"
   ],
   "keywords": [
@@ -48,8 +57,5 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.3"
   }
 }

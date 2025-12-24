@@ -1,4 +1,8 @@
-import '../dist/dq2apilib.js';
+import * as _dq2wasmapilib_module from '../dq2apilib.js';
+// Handle both CommonJS and ES module imports
+const _dq2wasmapilib = (typeof _dq2wasmapilib_module === 'object' && 'default' in _dq2wasmapilib_module)
+    ? _dq2wasmapilib_module.default
+    : _dq2wasmapilib_module;
 const idToConnectCallback = new Map();
 const idToQuoteDataCallback = new Map();
 const idToCommodityDataCallback = new Map();
@@ -91,11 +95,12 @@ const createDQ2ApiInstance = async (id, dq2wasmapilib) => {
  */
 export const newAPI = async () => {
     const id = Date.now().toString(16) + "_" + apiIndex++;
+    const dq2wasmapilib = globalThis.dq2wasmapilib || _dq2wasmapilib;
     // 確保 dq2wasmapilib 已載入
-    if (typeof globalThis.dq2wasmapilib === 'undefined') {
+    if (dq2wasmapilib === undefined) {
         throw new Error('dq2wasmapilib not loaded. Please ensure dq2apilib.js is loaded before importing this module.');
     }
-    await createDQ2ApiInstance(id, globalThis.dq2wasmapilib);
+    await createDQ2ApiInstance(id, dq2wasmapilib);
     return {
         Connect: async (identity, company, product, addr, name, password, autoreconnect, interval, missed) => {
             const dq2Api = idToDq2Api.get(id);
@@ -237,12 +242,12 @@ export const newAPI = async () => {
             const time = result?.DQ2SvrTime || "";
             return { date, time };
         },
-        SearchContract: async (type, keywords) => {
+        SearchContract: async (type, keywords, unikey) => {
             if (!isConnected(id)) {
                 throw new Error("DQ2API is not Connect.");
             }
             const dq2Api = idToDq2Api.get(id);
-            dq2Api?.SearchContract(type, keywords);
+            dq2Api?.SearchContract(type, keywords, unikey);
             return Promise.resolve();
         },
         OnConnectStatusFunc: async (callback) => {

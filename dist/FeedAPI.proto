@@ -1,15 +1,13 @@
-// Feed API server protocol v1.0.10
+// Feed API server protocol v1.0.17
 
 syntax = "proto2";
 
 package FeedAPI;
 
-option go_package = "./pb";
-
-// Last changes were made on 15 Sep 2025 v1.0.10
+// Last changes were made on 14 Dec 2025
 enum Version
 {
-  VERSION_VALUE = 1000010;
+  VERSION_VALUE = 1000017;
 }
 
 // ----------------------------------------------------------------------
@@ -48,6 +46,9 @@ message MainMsg
 
   // 4.12 Continued (接續旗號)
   optional bool Continued = 11;
+
+  // 4.13 RealGreeks (即時Greeks)
+  repeated RealGreek RealGreeks = 12;
 }
 
 
@@ -211,6 +212,10 @@ message ContractList
 
   // 警示類別
   optional WarrStat WarrningState = 11;
+
+  // 交割日期 YYYYMMDD
+  optional uint32 ContractDate = 12;
+
 }
 
 
@@ -246,14 +251,46 @@ message Realtime
 
 // ----------------------------------------------------------------------
 // 4.9.1 Market (市場資訊)
-enum TsState
+enum TsState // 盤別狀態碼
 {
-  TSSTATE_CLEAR = 2;
-  TSSTATE_OPEN = 3;
-  TSSTATE_CLOSE = 4;
-  TSSTATE_PREOPEN = 5;
-  TSSTATE_SUSPEND = 6;
-  TSSTATE_REMOVE = 7;
+  TSSTATE_CLEAR = 2;	// 清盤
+  TSSTATE_OPEN = 3;	// 開盤
+  TSSTATE_CLOSE = 4;	// 收盤
+  TSSTATE_PREOPEN = 5;	// 試撮
+  TSSTATE_SUSPEND = 6;	// 暫停
+  TSSTATE_REMOVE = 7;	// 刪除
+}
+enum TrStatus // 交易狀態
+{
+  TRSTATUS_REGULAR_TRADING = 0;		// 正常交易
+  TRSTATUS_IEP = 1;			// 試撮
+  TRSTATUS_PAUSE = 2;			// 暫停
+  TRSTATUS_NON_CANCELLABLE_ORDER = 3;	// 禁刪
+  TRSTATUS_CLOSE = 4;			// 收盤
+  TRSTATUS_CALL_AUCTION = 5;		// 集合競價
+  TRSTATUS_CIRCUIT_BREAKER_RT = 6;	// 熔斷(可恢復交易)
+  TRSTATUS_CIRCUIT_BREAKER_NRT = 7;	// 熔斷(不可恢復交易)
+  TRSTATUS_TRADING_HALT = 8;		// 停牌
+  TRSTATUS_NON_TRADING = 9;		// 非交易
+  TRSTATUS_VOLATILITY_INTERRUPT = 10;	// 波動性中斷
+  TRSTATUS_UNDEFINED = 11;		// 無狀態
+  TRSTATUS_PREOPEN = 12;		// 開盤前
+  TRSTATUS_POST_TRADING = 13;		// 盤後交易
+  TRSTATUS_MARKET_CLOSED = 14;		// 休市
+
+  // TAIFEX PAUSE BitMask 256(0x100) ------------
+  TRSTATUS_TAIFEX_PAUSE_001 = 257;	// bit0=1 因應特殊市況
+  TRSTATUS_TAIFEX_PAUSE_010 = 258;	// bit1=1 動態價格穩定措施資訊異常
+  TRSTATUS_TAIFEX_PAUSE_011 = 259;
+  TRSTATUS_TAIFEX_PAUSE_100 = 260;	// bit2=1 因資訊異常基準價無法計算
+  TRSTATUS_TAIFEX_PAUSE_101 = 261;
+  TRSTATUS_TAIFEX_PAUSE_110 = 262;
+  TRSTATUS_TAIFEX_PAUSE_111 = 263;
+}
+enum SessKind // 盤別分類
+{
+  SESSKIND_REGULAR = 0;			// 一般盤 (T盤 / 日盤)
+  SESSKIND_AFTER_HOURS = 1;		// 盤後盤 (T+1盤 / 夜盤)
 }
 message Market
 {
@@ -280,6 +317,30 @@ message Market
 
   // 昨成交總量
   optional uint64 PreTotalVolume = 8;
+
+  // 交易狀態
+  optional TrStatus TradeStatus = 9;
+
+  // 邏輯交易日
+  optional uint32 TradingDay = 10;
+
+  // 盤別分類
+  optional SessKind SessionKind = 11;
+
+  // AfterHour(T+1盤) 開盤價
+  optional double AHOpenPrice = 12;
+
+  // AfterHour(T+1盤) 最高價
+  optional double AHHighestPrice = 13;
+
+  // AfterHour(T+1盤) 最低價
+  optional double AHLowestPrice = 14;
+
+  // AfterHour(T+1盤) 收盤價
+  optional double AHClosePrice = 15;
+
+  // AfterHour(T+1盤) 成交總量
+  optional uint64 AHTotalVolume = 16;
 }
 
 
@@ -336,16 +397,16 @@ message Deal
 message DOM
 {
   // 買價 
-  repeated double BidPrices = 1;
+  repeated double BidPrices = 1 [packed=true];
 
   // 買量
-  repeated uint32 BidVolumes = 2;
+  repeated uint32 BidVolumes = 2 [packed=true];
 
   // 賣價
-  repeated double AskPrices = 3;
+  repeated double AskPrices = 3 [packed=true];
 
   // 賣量
-  repeated uint32 AskVolumes = 4;
+  repeated uint32 AskVolumes = 4 [packed=true];
 }
 
 
@@ -399,3 +460,98 @@ message SymbolList
   optional TrgCate TargetCategory = 8;
 }
 
+
+// ----------------------------------------------------------------------
+// 4.13 RealGreek (即時Greeks)
+message RealGreek
+{  
+  // 商品代碼
+  optional string SymbCode = 1;
+
+  // GMT+8 成交日期 (YYYYMMDD)
+  optional uint32 Date = 2;
+
+  // GMT+8 時間 (HHMMSSmmmuuunnnppp, mmm=milli-second, uuu=micro-second ; nnn=nano ; ppp=pico)
+  optional uint64 Time = 3;
+
+  // Level 1 Greeks
+  optional GreeksL1 GreeksL1 = 4;
+
+  // Level 2 Greeks
+  optional GreeksL2 GreeksL2 = 5;
+
+  // Level 3 Greeks
+  optional GreeksL3 GreeksL3 = 6;
+  
+  // Level 4 Greeks
+  optional GreeksL4 GreeksL4 = 7;
+
+}
+
+// ----------------------------------------------------------------------
+// 4.13.1 GreeksL1 (Level 1 Greeks)
+message GreeksL1
+{
+  optional float OTMIV = 1;
+  optional float MIV = 2;
+  optional float TV = 3;
+  optional float TheoryPrice = 4;
+  optional float Delta = 5;
+  optional float Gamma = 6;
+  optional float Vega = 7;
+  optional float Theta = 8;
+  optional float Rho = 9;
+  optional float HV_4w = 10;
+  optional float YOTMIV = 11;
+}
+
+// ----------------------------------------------------------------------
+// 4.13.2 GreeksL2 (Level 2 Greeks)
+message GreeksL2
+{
+  optional float Charm = 1;
+  optional float Vanna = 2;
+  optional float Vomma = 3;
+  optional float Speed = 4;
+  optional float Zomma = 5;
+  optional float CallPutSkew = 6;
+  optional float CallSkew = 7;
+  optional float PutSkew = 8;
+  optional float NearAtmIV = 9;
+  optional float BidIV = 10;
+  optional float AskIV = 11;
+}
+
+// ----------------------------------------------------------------------
+// 4.13.3 GreeksL3 (Level 3 Greeks)
+message GreeksL3
+{
+  optional float Call10DeltaIV = 1;
+  optional float Put10DeltaIV = 2;
+  optional float Call25DeltaIV = 3;
+  optional float Put25DeltaIV = 4;
+  optional float Call10DeltaTV = 5;
+  optional float Put10DeltaTV = 6;
+  optional float Call25DeltaTV = 7;
+  optional float Put25DeltaTV = 8;
+  optional float CallNear10DeltaIV = 9;
+  optional float PutNear10DeltaIV = 10;
+  optional float CallNear25DeltaIV = 11;
+  optional float PutNear25DeltaIV = 12;
+  optional float CallTailRisk = 13;
+  optional float PutTailRisk = 14;
+  optional float CallResidualTailRisk = 15;
+  optional float PutResidualTailRisk = 16;
+}
+
+// ----------------------------------------------------------------------
+// 4.13.4 GreeksL4 (Level 4 Greeks)
+message GreeksL4
+{
+  optional float StraddleAtmPremium = 1;
+  optional float StraddleAtmWeight = 2;
+  optional float StraddleCall10DeltaMid = 3;
+  optional float StraddleCall25DeltaMid = 4;
+  optional float StraddlePut10DeltaMid = 5;
+  optional float StraddlePut25DeltaMid = 6;
+}
