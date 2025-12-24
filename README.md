@@ -2,11 +2,16 @@
 
 ## API 內含檔案
 
-### JavaScript (html) 版本
-1.  `../dist/dq2apilib.js`: 提供 JavaScript 介面，通過建立此物件來操作 DQ2 API。
-2.  `FeedAPI.proto`: Protobuf 定義檔，即時報價使用 `FeedAPI::Realtime`。
-3.  `APITest.html`: `dq2wasmapilib` 的測試範例。
-4.  `HDAPI.proto`: Protobuf 定義檔，回補歷史資料使用。
+### JavaScript (HTML/Browser) 版本
+1.  `dist/dq2apilib.js`: 提供瀏覽器使用的 JavaScript 庫，封裝了 DQ2 API 的操作介面。
+2.  `dist/FeedAPI.proto`: Protobuf 定義檔，用於即時報價數據（`FeedAPI::Realtime`）。
+3.  `dist/HDAPI.proto`: Protobuf 定義檔，用於歷史數據回補。
+4.  `dist/quote2.proto`: Protobuf 定義檔，用於合約搜尋等功能。
+
+### Node.js (CommonJS/ESM) 版本
+本套件支援 Node.js 環境，提供 CommonJS 與 ESM 兩種格式：
+*   **CommonJS**: 位於 `dist/cjs/`
+*   **ESM**: 位於 `dist/esm/`，包含 TypeScript 型別定義檔 (`dq2api.d.ts`)。
 
 ---
 
@@ -108,7 +113,7 @@
 *   `CallBack OnCommodityVersion` 返回。
 
 ### 11. SubHotmap
-**描述**: 訂閱熱門月對應表。目前回復資料有Hot、Hot2、Hot到期日, 未來增加Near、Near2、Quart、Quatt2…。
+**描述**: 訂閱熱門月對應表。目前回覆資料有Hot、Hot2、Hot到期日, 未來增加Near、Near2、Quart、Quatt2…。
 **參數**:
 *   `subject` (string): 要訂閱的品種。
 **返回值**:
@@ -150,8 +155,8 @@
 **描述**: 用於處理 NATS 連接狀態變化的回調函數。
 **參數**:
 *   `status`: 連接狀態。
-    *   `0`: 表示連接失敗或已斷開。
-    *   `1`: 表示成功連接到 NATS 服務器。
+*   `0`: 表示連接失敗或已斷開。
+*   `1`: 表示成功連接到 NATS 服務器。
 
 ### 2. OnQuoteDataFunc
 **描述**: 用於處理報價數據更新的回調函數。
@@ -253,12 +258,12 @@
 
 | 回調函數 | 參數 | 說明 |
 | :--- | :--- | :--- |
-| **OnConnectStatusFunc** | `status` int | 连接状态变化时触发的回调函数, status=1 表示连接成功, status=0 表示断开连接。 |
-| **OnQuoteDataFunc** | `symbol` string, `data` []byte, `dataLen` int | 行情数据更新时触发的回调函数, symbol 是标的名称, data 是行情数据, dataLen 是数据长度。 |
-| **OnCommodityDataFunc** | `subject` string, `data` string | 商品数据更新时触发的回调函数, subject 是商品主题, data 是商品数据。 |
-| **OnHistoryDataFunc** | `type` string, `data` []byte | 查詢指定條件的歷史資料的回調函數, type是查詢指令type, data 是查詢回傳数据 |
+| **OnConnectStatusFunc** | `status` int | 連接狀態變化時觸發的回調函數, status=1 表示連接成功, status=0 表示斷開連接。 |
+| **OnQuoteDataFunc** | `symbol` string, `data` []byte, `dataLen` int | 行情數據更新時觸發的回調函數, symbol 是標的名稱, data 是行情數據, dataLen 是數據長度。 |
+| **OnCommodityDataFunc** | `subject` string, `data` string | 商品數據更新時觸發的回調函數, subject 是商品主題, data 是商品數據。 |
+| **OnHistoryDataFunc** | `type` string, `data` []byte | 查詢指定條件的歷史資料的回調函數, type是查詢指令type, data 是查詢回傳數據 |
 | **OnMessageDataFunc** | `code` int, `msg` string | 錯誤訊息、API版本, 及API內部Log返回 |
 | **OnCommodityVersionFunc** | `subject` string, `count` int, `timestamp` time | 品種資訊、分類表、商品列表版本訊息查詢的回調函數 |
-| **OnHotmapFunc** | `subject` string, `data` string | 品種数据更新时触发的回调函数, subject 是品種主题, data 是熱門月数据。 |
+| **OnHotmapFunc** | `subject` string, `data` string | 品種數據更新時觸發的回調函數, subject 是品種主題, data 是熱門月數據。 |
 | **OnServerTimeFunc** | `date` int, `time` double | 有訂閱server時間時, 若有更新, 將自動推送通知。 |
-| **OnHistoryDataFunc** | `data` []byte | 搜尋合約的回調函數, data 是查詢回傳数据 |
+| **OnSearchContractFunc** | `data` []byte | 搜尋合約的回調函數, data 是查詢回傳數據 |
