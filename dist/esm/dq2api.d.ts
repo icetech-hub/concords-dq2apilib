@@ -53,7 +53,6 @@ export interface IDQ2quoteAPI {
     ** function：SubCommodity、UnsubCommodity、GetCommodity
     ** callback：OnCommodityDataFunc
     *
-    * 品種資訊、分類表、商品列表，子集個數與更新 TimeStamp：
     * 熱門月對應表：
     ** function：SubHotmap、UnsubHotmap、GetHotmap
     ** callback：OnHotmapFunc
@@ -193,7 +192,7 @@ export interface IDQ2quoteAPI {
     /**
      * 取得 `DQ2 server` 當下日期、時間。
      * @return {string} `date` : `server` 當下日期。
-     * @return {string} `time` : `server` 當下時間。
+     * @return {string} `time` : `server` 當下時間。 HHMMSSmmmuuunnnppp
      */
     GetServerDateTime(): Promise<{
         date: string;

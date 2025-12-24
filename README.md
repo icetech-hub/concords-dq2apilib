@@ -1,5 +1,54 @@
 # DQ2 API 文檔
 
+**Symbol格式**：I.S.TWS.XXXX。 
+*  I : 固定保留字
+*  S : 證券
+*  TWS : 交易所
+*  XXXX : 股票代碼
+*  不分上市、上櫃
+*  例如：台積電：I.S.TWS.2330、聯發科：I.S.TWS.2454 
+*  零股symbol：I.Z.TWS.XXXX 
+
+**日期、時間格式**： 一律為 GMT+8
+*  即時報價 FeedAPI::Realtime.Date : YYYYMMDD 
+*  即時報價 FeedAPI::Realtime.Time : HHMMSSmmmuuunnnppp (mmm=milli-second, uuu=micro-second ; nnn=nano ; ppp=pico)
+* 因FeedAPI::Realtime.Time定義為數值，午夜時段（00 點）開頭的 0 會消失。如收到的數值為 101...，請自行補齊前導零以對應 00:01:01。上午08點、09點同樣。
+* 歷史資料 omk::HDData.Omk.datetime : YYYYMMDDHHMMSSmmm 
+
+**API 功能說明**：
+
+**連線**：
+* function：Connect、Disconnect
+* callback：OnConnectStatusFunc
+
+**即時報價**：
+* function：SubQuote、UnsubQuote、GetQuote
+* callback：OnQuoteDataFunc
+
+**歷史資料**：
+* function：QryHistoryData 
+* callback：OnHistoryDataFunc 
+
+**合約搜尋**：   
+* function：SearchContract 
+* callback：OnSearchContractFunc 
+
+**取得報價server主機時間**:
+* function：GetServerDateTime 
+
+***品種資訊、分類表、商品列表**：
+* function：SubCommodity、UnsubCommodity、GetCommodity
+* callback：OnCommodityDataFunc
+
+**熱門月對應表**：
+* function：SubHotmap、UnsubHotmap、GetHotmap 
+* callback：OnHotmapFunc 
+
+**訊息回報**：
+* function：- 
+* callback：OnMessageDataFunc
+
+
 ## API 內含檔案
 
 ### JavaScript (HTML/Browser) 版本
@@ -19,6 +68,7 @@
 
 ### 1. Connect
 **描述**: 使用提供的憑證和地址建立與 NATS 服務器的連接。
+
 **參數**:
 *   `identity`: 唯一識別client ID。
 *   `company`:
@@ -35,46 +85,55 @@
 
 ### 3. SubQuote
 **描述**: 訂閱指定合約的報價數據。
+
 **參數**:
 *   `symbol` (string): 要訂閱的報價合約。
+
 **返回值**:
 *   `1`: 已重複訂閱。
 *   `0`: 訂閱成功。
 *   `-1`: 找不到指定合約。
 *   `-2`: 尚未連線至伺服器。
+
 **行為**:
 *   API 維護訂閱計數 (count)，若重複訂閱，則重新推送一次市況。
 *   `UnsubQuote` 會減少訂閱計數 (count)，當 `count = 0` 時，才會實際發送取消訂閱請求。
-*   `I.F.TWF.TXF.202506.1`、`I.F.TWF.TXF.202506.2`、`I.F.TWF.TXF.202506.*` 被視為三種獨立訂閱。
-*   若這三種訂閱同時存在, 取消訂閱時需對每一種都發送 `UnsubQuote`。
+*   `I.S.TWS.2330.1`、`I.S.TWS.2330.2` 被視為兩種獨立訂閱。
+*   若這兩種訂閱同時存在, 取消訂閱時需對每一種都發送 `UnsubQuote`。
 **報價分為 Level 1 和 Level 2 訂閱**:
-*   **Level 1**: 提供基本報價資訊，包括買一、賣一和最新成交價。例如, 訂閱 `I.F.TWF.TXF.202506.1`。
-*   **Level 2**: 包含委託簿數據, 需額外訂閱。例如, 訂閱 `I.F.TWF.TXF.202506.2`。
-*   若需同時訂閱 Level 1 和 Level 2, 可使用通配符 `*`, 如 `I.F.TWF.TXF.202506.*`。
+*   **Level 1**: 提供基本報價資訊，包括買一、賣一和最新成交價。例如, 訂閱 `I.S.TWS.2330.1`。
+*   **Level 2**: 包含委託簿數據, 需額外訂閱。例如, 訂閱 `I.S.TWS.2330.2`。
 
 ### 4. UnsubQuote
 **描述**: 取消訂閱指定合約的報價數據。
+
 **參數**:
 *   `symbol` (string): 要取消訂閱的報價合約。
+
 **行為**:
-*   `I.F.TWF.TXF.202506.1`、`I.F.TWF.TXF.202506.2`、`I.F.TWF.TXF.202506.*` 被視為三種獨立訂閱。
-*   若這三種訂閱同時存在, 取消訂閱時需對每一種都發送 `UnsubQuote`。
+*   `I.S.TWS.2330.1`、`I.S.TWS.2330.2` 被視為兩種獨立訂閱。
+*   若這兩種訂閱同時存在, 取消訂閱時需對每一種都發送 `UnsubQuote`。
 
 ### 5. GetQuote
 **描述**: 獲取指定合約的報價數據。未SubQuote, 返回nil。
+
 **參數**:
 *   `symbol` (string): 要查詢的報價合約。
+
 **返回值**:
 *   `*char`: 是指向報價數據的二進制指針, 需將此二進制數據反序列化為 Protobuf 物件 (`FeedAPI::Realtime`)。
 *   `size_t`: 報價數據的長度。
 
 ### 6. SubCommodity
 **描述**: 訂閱品種資訊、分類表、商品列表。
+
 **參數**:
 *   `subject` (string): 要訂閱的商品主題。
+
 **返回值**:
 *   `0`: 訂閱成功。
 *   `-1`: 找不到指定subject。
+
 **行為**:
 *   品種資訊subject: `dq2.Info.F.CME.6A`
 *   分類表subject: `dq2.classify.Master2`
@@ -82,70 +141,92 @@
 
 ### 7. UnsubCommodity
 **描述**: 取消訂閱商品資訊、分類表、商品列表。
+
 **參數**:
 *   `subject` (string): 要取消訂閱的商品主題。
 
 ### 8. GetCommodity
 **描述**: 獲取指定主題的商品數據。未SubCommodity, 返回nil。
+
 **參數**:
 *   `subject` (string): 要查詢的商品主題。
+
 **返回值**:
 *   `*char`: 是指向商品數據的 C 字符串指針, 該數據為 JSON 格式的字符串。
 *   `size_t`: 商品數據的長度。
 
 ### 9. QryHistoryData
 **描述**: 查詢並取得指定條件的歷史資料。
+
 **參數**:
 *   `qrystr` (string): 查詢條件, 採用 JSON 格式的指令字串。
+
 **行為**:
-*   **1分K**: 指令 `{"s":"hd","c":"omk","d":{"s":"I.F.TWF.TXF.202504","stime":20250408140000000,"etime":20250408150000000},"r":"xxx"}`。
-*   **合約搜尋**: 指令 `{"s":"quote2","c":"search","d":{"type":["S","Z"],"symbol":"台"},"r":"xxx"}`。
+*   **分價表**: 指令 `{ “s”: "hd",”c”: "pv",”d”: {“s”: "I.S.TWS.2330"},”r”: "xxx" }`。
+*   **分時表**: 指令 `{ “s”: "hd",”c”: "tbl",”d”: {“s”: "I.S.TWS.2330",”bars”: 500,”n”: 1 },”r”: "xxx" }`。
+   bars 設定取回最新的資料筆數（本例為 500 筆），參數 n 須固定為 1。
+*   **1分K**: 指令 `{ “s”: "hd",”c”: "omk",”d”: {“s”: "I.S.TWS.2330",”stime”: 20250408140000000,”etime”: 20250408150000000 },”r”: "xxx" }`。
+*   **日K**: 指令 `{ “s”: "hd",”c”: "dk",”d”: {“s”: "I.S.TWS.2330",”stime”: 20250408140000000,”etime”: 20250408150000000 },”r”: "xxx" }`。
+*   r 為自訂鍵值（Key），用於多筆查詢並行時，確保回傳結果能準確對應至原始請求。
+*   1分K、日K 若需要包含除權息調正因子，請加入 `"ExD": 1`。 因會較耗時，需要時才加日此參數。
+例如：`{ “s”: "hd",”c”: "dk","ExD": 1,”d”: {“s”: "I.S.TWS.2330",”stime”: 20250408140000000,”etime”: 20250408150000000 },”r”: "xxx" }`。
 
 ### 10. GetCommodityVersion
 **描述**: 獲取品種資訊、分類表、商品列表, 子集個數與更新TimeStamp。
+
 **參數**:
 *   `subject` (string): 要查詢的商品主題。
 *   品種資訊subject: `dq2.Info`
 *   分類表subject: `dq2.classify`
 *   商品列表subject: `dq2.list`
+
 **返回值**:
 *   無。
 *   `CallBack OnCommodityVersion` 返回。
 
 ### 11. SubHotmap
 **描述**: 訂閱熱門月對應表。目前回覆資料有Hot、Hot2、Hot到期日, 未來增加Near、Near2、Quart、Quatt2…。
+
 **參數**:
 *   `subject` (string): 要訂閱的品種。
+
 **返回值**:
 *   `0`: 訂閱成功。
 *   `-1`: 找不到指定subject。
+
 **行為**:
 *   `subject`: `dq2.hot.I.F.TWF.TXF`
 
 ### 12. UnsubHotmap
 **描述**: 取消訂閱熱門月對應表。
+
 **參數**:
 *   `subject` (string): 要取消訂閱的品種。
 
 ### 13. GetHotmap
 **描述**: 獲取指定主題的品種熱門月對應數據。
+
 **參數**:
 *   `subject` (string): 要查詢的品種主題。
+
 **返回值**:
 *   `*char`: 是指向商品數據的 C 字符串指針, 該數據為 JSON 格式的字符串。
 *   `size_t`: 商品數據的長度。
 
 ### 14. GetServerDateTime
 **描述**: 取得DQ2 server當下日期、時間。
+
 **返回值**:
 *   `Date`: server當下日期。
-*   `Time`: server當下時間。
+*   `Time`: server當下時間。 (HHMMSSmmmuuunnnppp)
 
 ### 15. SearchContract
 **描述**: 搜尋keyword相關合約。
+
 **參數**:
-*   `type` (string): S,F,O。
+*   `type` (string): S,SW,F,O。
 *   `keyword` (string)
+*   type：合約搜尋範圍。可選用 S (證券/不含權證)、SW (權證)、F (期貨)、O (選擇權)。支援組合查詢，如 S,SW。
 
 ---
 
@@ -153,6 +234,7 @@
 
 ### 1. OnConnectStatusFunc
 **描述**: 用於處理 NATS 連接狀態變化的回調函數。
+
 **參數**:
 *   `status`: 連接狀態。
 *   `0`: 表示連接失敗或已斷開。
@@ -160,6 +242,7 @@
 
 ### 2. OnQuoteDataFunc
 **描述**: 用於處理報價數據更新的回調函數。
+
 **參數**:
 *   `symbol` (string): 報價合約代碼。
 *   `data` ([]byte): 是指向報價數據的二進制指針, 需將此二進制數據反序列化為 Protobuf 物件 (`FeedAPI::Realtime`)。
@@ -171,20 +254,31 @@
 
 ### 3. OnCommodityDataFunc
 **描述**: 用於處理品種資訊、分類表、商品列表更新的回調函數。
+
 **參數**:
 *   `subject` (string): 商品數據的主題。
 *   `data` (string): 該數據為 JSON 格式的字符串。
+
 **行為**:
 *   品種資訊、分類表、商品列表均對應 `subject` 訂閱, 若有更新, 將自動推送通知。
 
 ### 4. OnHistoryDataFunc
 **描述**: 用於處理查詢指定條件的歷史資料的回調函數。
+
 **參數**:
 *   `type` (string): 查詢指令type。
 *   `data` ([]byte): 是指向報價數據的二進制指針, 需將此二進制數據反序列化為 Protobuf 物件 (`HDAPI.proto`)。
+*   依據 type 不同，data 內容有所不同：
+*   hd.pv：分價表數據。 omk::HDData.pvs
+*   hd.tbl：分時表數據。 omk::HDData.tbls
+*   hd.omk：1分K數據。 omk::HDData.omks
+*   hd.dk：日K數據。 omk::HDData.omks
+*   1分K、日K 若有包含除權息調正因子。除權息還原價格作法如下：
+*   開 = openprice / predividendadj、高 = highestprice / predividendadj、低 = lowestprice / predividendadj、收 = closeprice / predividendadj
 
 ### 5. OnMessageDataFunc
 **描述**: 錯誤訊息、API版本, 及API內部Log返回。
+
 **參數**:
 *   `code` (int): 訊息代碼。
 *   `msg` (string): 訊息內容。
@@ -205,6 +299,7 @@
 
 ### 6. OnCommodityVersionFunc
 **描述**: 品種資訊、分類表、商品列表版本訊息查詢的回調函數。
+
 **參數**:
 *   `subject` (string): 品種資訊、分類表、商品列表 (subject)。
 *   `count` (int): 子集個數。
@@ -212,24 +307,30 @@
 
 ### 7. OnHotmapFunc
 **描述**: 熱門月表更新的回調函數。
+
 **參數**:
 *   `subject` (string): 品種數據的主題。
 *   `data` (string): 該數據為 JSON 格式的字符串。
+
 **行為**:
 *   熱門月表均對應 `subject` 訂閱, 若有更新, 將自動推送通知。
 
 ### 8. OnServerTimeFunc
 **描述**: 有訂閱server時間時, 回調函數。
+
 **參數**:
 *   `Date`: server當下日期。
 *   `Time`: server當下時間。
+
 **行為**:
 *   有訂閱server時間時, 若有更新, 將自動推送通知。
 
 ### 9. OnSearchContractFunc
 **描述**: 搜尋合約, 回調函數。
+
 **參數**:
-*   `data` ([]byte): 搜尋結果。是指向報價數據的二進制指針, 需將此二進制數據反序列化為 Protobuf 物件。
+*   `data` ([]byte): 搜尋結果。是指向報價數據的二進制指針, 需將此二進制數據反序列化為 Protobuf (`quote2.proto`) 物件。
+*   透過 quote2::Quote2Data.recognize，開發者可精確比對並關聯回原查詢的 unikey，以辨識多項非同步請求的回傳結果。
 
 ---
 ## 函數總覽表
